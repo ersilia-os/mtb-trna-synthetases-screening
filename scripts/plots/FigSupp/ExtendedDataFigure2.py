@@ -55,13 +55,13 @@ classified_uniprots = sorted(uid for uid, gene in uniprot_to_gene.items() if gen
 # with no combination clearing it is dropped (NaN), not silently backfilled.
 GLOBAL_COVERAGE_MIN = 0.10
 
-CATEGORY_ORDER = ["Class I vs Class I", "Class II vs Class II", "Class I vs Class II"]
+CATEGORY_ORDER = ["I vs I", "II vs II", "I vs II"]
 
 
 def pair_category(gene_1, gene_2):
-    classes = sorted([AARS_CLASS_LABELS[gene_1], AARS_CLASS_LABELS[gene_2]])
-    if classes[0] == classes[1]:
-        return f"{classes[0]} vs {classes[0]}"
+    # Shortened from AARS_CLASS_LABELS' "Class I"/"Class II" to fit the legend at this figure's
+    # panel size (user-requested).
+    classes = sorted(AARS_CLASS_LABELS[gene].replace("Class ", "") for gene in (gene_1, gene_2))
     return f"{classes[0]} vs {classes[1]}"
 
 
@@ -104,20 +104,23 @@ def plot_global_vs_local_rmsd(ax, pair_data):
         subset = pair_data[pair_data["category"] == category]
         ax.scatter(subset["global_rmsd"], subset["local_rmsd"], color=category_colors[category],
                    label=f"{category} (n={len(subset)})")
-    stylia.label(ax, xlabel="Global RMSD, 10%-coverage-filtered min (Å)", ylabel="Local RMSD, min (Å)",
+    stylia.label(ax, xlabel="Global RMSD,\n10%-coverage-filtered min (Å)", ylabel="Local RMSD, min (Å)",
                  title="Global vs. local structural RMSD\nper protein pair, by Class I/II category")
     # box_aspect(1) forces a physically square plot box (square data space, per stylia convention).
     ax.set_box_aspect(1)
-    # Default stylia legend (no loc/bbox_to_anchor/frameon override) - was placed outside the axes
-    # to the right, which forced save_figure's tight bbox to widen the whole canvas around a small
-    # square plot, making the (correctly-sized) text look oversized relative to the mostly-blank
-    # image (user-flagged). Stylia's own default (white semi-transparent frame, inside the axes)
-    # lands wherever matplotlib's "best" placement finds the least data overlap.
-    ax.legend()
+    # Placed to the right of the axes rather than inside - at this panel's smaller size (matched to
+    # the other square-scatter panels, see main()) no in-axes placement (auto "best" or a pinned
+    # corner) was free of data: this panel's 3 categories don't fit any gap in the data without
+    # touching a point (user-flagged after two prior attempts).
+    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), frameon=False)
 
 
 def main():
-    fig, axs = stylia.create_figure(1, 1, width=0.6, height=0.6)
+    # width/height=0.3 matches the per-panel size used by the other square-scatter panels in this
+    # supplementary series (ExtendedDataFigure4/5/6 split the same 0.6-fraction canvas across 2-4
+    # panels) - 0.6/0.6 here was sized for a single panel and rendered ~4x larger in area than the
+    # rest of the series (user-flagged).
+    fig, axs = stylia.create_figure(1, 1, width=0.35, height=0.35)
     ax = axs.next()
     plot_global_vs_local_rmsd(ax, pair_data)
 
