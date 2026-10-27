@@ -702,6 +702,19 @@ for a projected month before this was caught and fixed).
 
 **Outputs:** `output/96_{organism}_docking/docking_results/<uniprot_ac>/<pocket_number>/report.csv` (+ `docking.tar.gz`, `logs.tar.gz`).
 
+## Enamine order
+
+### `102_order_selection.py`
+Cuts script 101's selection lists at a per-list top-N, joins an Enamine quote's catalog IDs and prices on compound ID, and flags which compounds to buy (`to_buy`). Cut on the ranks as they are, with the price rule applied last (no re-ranking), so script 101's 4 hand-picked near-misses (ranks 11-12) drop out. Non-buyable compounds are dropped from the output (the `to_buy` column is then True throughout); `--keep-non-buyable` keeps them, flagged `to_buy = False`.
+
+**Key decisions (chosen by the user, 2026-10-27):** top **7** per single/dual list, top **35** per multi list (script 101 keeps 10/50). `to_buy` = quote price below the required `--price-cutoff`, so the order stays within the user's budget cap. With the 244-compound Enamine quote of 2026-10-20 this gives 192 selected and 168 to buy (the 168 rows written). `--top-n` and `--top-n-multi` are arguments too.
+
+**Confidential quote:** Enamine's quote terms forbid sharing its prices, and `output/` is public and eosvc-synced, so the quote xlsx and the output CSV are arguments (`--quote`, `--output`) and the script refuses an output path inside the repository.
+
+**Inputs:** `output/101_merge_selections/{merged_selections,audit_input}.csv`, the quote xlsx.
+
+**Output:** one CSV at `--output` (outside the repo): quote columns (`enamine_*`, `to_buy`), provenance recomputed from the kept entries only (`origins`, `n_selections`, `best_rank`, `selected_targets`), and the remaining `audit_input.csv` columns (physchem/ADMET, on-target scores, off-target selectivity).
+
 ## Pending review (no README text yet)
 
 The following script exists on disk but hasn't been individually reviewed against documentation yet: `76_boltz2_docking_supervisor.sh`.
